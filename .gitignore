@@ -1,0 +1,28 @@
+# 禁止意外提交下载的模型及临时缓存
+*.safetensors
+*.gguf
+*.ckpt
+*.pt
+*.pth
+*.onnx
+hf_cache/
+.xet/
+.cache/
+xdg_cache/
+ComfyUI/
+tmp/
+temp/
+logs/
+*.log
+
+# 禁止提交本地凭证
+.env
+.env.*
+*.token
+*credentials*.json
+*secret*.json
+
+# Python 临时文件
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
