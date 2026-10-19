@@ -29,10 +29,14 @@ def mask_for(size,polygon,feather):
         raise ValueError("polygon outside original dimensions")
     mask=np.zeros((h,w),dtype=np.uint8)
     cv2.fillPoly(mask,[np.round(pts).astype(np.int32)],255)
+    # Only feather INSIDE the polygon. Gaussian blur must not leak changes
+    # outside the user's authorized region, even by one pixel.
+    hard=(mask>0).astype(np.float32)
     if feather>0:
         kernel=(int(feather*4)|1)
-        mask=cv2.GaussianBlur(mask,(kernel,kernel),feather)
-    return mask.astype(np.float32)/255
+        soft=cv2.GaussianBlur(mask,(kernel,kernel),feather).astype(np.float32)/255
+        return np.minimum(soft,hard)
+    return hard
 
 def composite(src, config, qwen=None):
     arr=np.asarray(src,dtype=np.uint8)
