@@ -117,6 +117,27 @@ def generate_task(t):
         print("⏭ 已有 GitHub 成品，不覆盖:",output_path)
         return
     blob=source_bytes(t)
+    if t["id"]=="Q25_ROOF_DAWN_MATCH":
+        # Use supplied, same-camera daybreak canonical frame to GUARANTEE topology.
+        # Label as source-derived, never falsely attribute this to a new GPU inference.
+        with zipfile.ZipFile(ZFILE) as z:
+            dawn_raw=z.read(index["scenes/SCN07_ROOFTOP_DAYBREAK.png"])
+        base=ImageOps.exif_transpose(Image.open(io.BytesIO(blob))).convert("RGB")
+        dawn=ImageOps.exif_transpose(Image.open(io.BytesIO(dawn_raw))).convert("RGB")
+        if base.size!=dawn.size:
+            raise RuntimeError("屋顶晨光母图尺寸与原屋顶不匹配，请人工核对")
+        gh_write_bytes(output_path,dawn_raw,"feipian: canonical source-locked daybreak Q25")
+        gh_write_json(f"feipian/results/{t['id']}.json",{
+            "schema_version":1,"id":t["id"],"status":"GENERATED_AWAITING_VISUAL_QA",
+            "output_path":output_path,"method":"CANONICAL_DAYBREAK_REFERENCE_REUSED_NO_GPU",
+            "dimensions":list(dawn.size),"source":t["source"],
+            "reference_paths":t["references"],"reference_images_used_directly":True,
+            "engine":"REFERENCE_SELECTION_NOT_NEW_QWEN_INFERENCE",
+            "completed_at":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "qa_note":"Uses user-provided matching SCN07 morning rooftop reference to avoid changing roof topology."})
+        created[t["id"]]=dawn_raw
+        print("✅ Q25直接采用已有同机位晨光母图，未伪称AI重绘:",output_path)
+        return
     name,original,policy=make_reference_input(t,blob)
     print("▶️ ",t["id"],"源:",t["source"],"模式:",policy["edit_mode"])
     generated=generate_one(t["id"],t["optimized_prompt"],name,t["seed"],RESOLUTION)
