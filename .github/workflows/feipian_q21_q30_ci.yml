@@ -1,0 +1,47 @@
+name: Feipian Q21-Q30 Preflight
+on:
+  push:
+    paths:
+      - 'feipian/Q21_Q30_MANIFEST.json'
+      - 'feipian/run_Q21_Q30_colab.py'
+      - 'feipian/Colab_Q21_Q30.ipynb'
+      - '.github/workflows/feipian_q21_q30_ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate notebook, batch runner, manifest
+        run: |
+          python - <<'PY'
+          import ast, json, pathlib
+          runner=pathlib.Path('feipian/run_Q21_Q30_colab.py').read_text(encoding='utf-8')
+          ast.parse(runner,filename='run_Q21_Q30_colab.py')
+          nb=json.loads(pathlib.Path('feipian/Colab_Q21_Q30.ipynb').read_text(encoding='utf-8'))
+          for idx,c in enumerate(nb['cells']):
+            if c['cell_type']=='code':
+              ast.parse(''.join(c['source']) if isinstance(c['source'],list) else c['source'],filename=f'cell_{idx}')
+          manifest=json.loads(pathlib.Path('feipian/Q21_Q30_MANIFEST.json').read_text(encoding='utf-8'))
+          tasks={x['id']:x for x in manifest['tasks']}
+          assert len(tasks)==10
+          assert len(manifest['generation_order'])==10
+          assert set(manifest['generation_order'])==set(tasks)
+          seen=set()
+          for name in manifest['generation_order']:
+            t=tasks[name]
+            assert t['output']==f'feipian/{name}.png'
+            if t['source'].startswith('@'):
+              assert t['source'][1:] in seen,name
+            assert '<image1>' in t['optimized_prompt']
+            assert len(t['optimized_prompt'])>=20
+            seen.add(name)
+          assert 'Q25_ROOF_DAWN_MATCH' in runner and 'CANONICAL_DAYBREAK_REFERENCE_REUSED_NO_GPU' in runner
+          assert 'GENERATED_AWAITING_VISUAL_QA' in runner
+          print('Feipian Q21-Q30 static checks passed. This is NOT GPU inference.')
+          PY
