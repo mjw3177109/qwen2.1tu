@@ -1,0 +1,62 @@
+name: V5.3 Fail-Closed Regression
+on:
+  push:
+    paths:
+      - "tools/qwen_v53_policy.py"
+      - "tools/qwen_batch_ingest.py"
+      - "tools/qwen_preserve_original.py"
+      - "tests/test_qwen_v53_*.py"
+      - "Colab_Qwen21_Edit_Batch_V5.ipynb"
+      - ".github/workflows/qwen_v53_ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: python -m pip install requests Pillow numpy opencv-python-headless
+      - name: Run security and batch tests
+        run: python -m unittest discover -s tests -p 'test_qwen_v53_*.py' -v
+      - name: Verify all Colab notebook cells compile
+        run: |
+          python - <<'PY'
+          import ast,json
+          nb=json.load(open('Colab_Qwen21_Edit_Batch_V5.ipynb',encoding='utf-8'))
+          for i,cell in enumerate(nb['cells']):
+              if cell['cell_type'] != 'code':continue
+              source=cell['source']
+              if isinstance(source,list):source=''.join(source)
+              # Notebook source cells use ordinary Python, except shell magics.
+              ast.parse(source, filename=f'cell_{i}')
+          worker=nb['cells'][9]['source']
+          if isinstance(worker,list):worker=''.join(worker)
+          assert 'v53_policy.validate_task_policy(job)' in worker
+          assert '"status":"NEEDS_REGION"' in worker
+          assert '"SOURCE_PRESERVED_QWEN_PATCH"' in worker
+          assert '"CPU_MASK_RECOLOR"' in worker
+          print('Notebook compiled and V5.3 safety gates are wired.')
+          PY
+      - name: Test no pixel changes outside polygon
+        run: |
+          python - <<'PY'
+          import numpy as np
+          from PIL import Image
+          from tools.qwen_preserve_original import composite, mask_for
+          a=np.full((120,180,3),180,dtype='uint8')
+          image=Image.fromarray(a,'RGB')
+          region={"mode":"recolor","polygon":[[30,20],[90,20],[90,65],[30,65]],
+                  "feather":3,"color_transform":"white_to_safety_yellow"}
+          out,_=composite(image,region)
+          b=np.asarray(out)
+          mask=mask_for(image.size,region['polygon'],region['feather'])
+          assert np.array_equal(a[mask==0],b[mask==0])
+          assert int(np.any(a!=b,axis=2).sum())>20
+          print('Pixel lock passed.')
+          PY
