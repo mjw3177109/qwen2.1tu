@@ -1,0 +1,53 @@
+name: Feipian Q21-Q31 Preflight
+on:
+  push:
+    paths:
+      - "feipian/Q21_Q31_MANIFEST.json"
+      - "feipian/run_Q21_Q31_colab.py"
+      - "feipian/Colab_Q21_Q31.ipynb"
+      - ".github/workflows/feipian_q21_q31_ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Validate notebook, runner and batch ordering
+        run: |
+          python - <<'PY'
+          import ast, json, pathlib, re
+          root=pathlib.Path('feipian')
+          runner=(root/'run_Q21_Q31_colab.py').read_text('utf-8')
+          ast.parse(runner)
+          nb=json.loads((root/'Colab_Q21_Q31.ipynb').read_text('utf-8'))
+          for i,cell in enumerate(nb['cells']):
+              if cell['cell_type']=='code':
+                  s=cell['source']
+                  ast.parse(''.join(s) if isinstance(s,list) else s, filename=f'cell_{i}')
+          manifest=json.loads((root/'Q21_Q31_MANIFEST.json').read_text('utf-8'))
+          assert manifest['batch']=='Q21-Q31' and len(manifest['tasks'])==11
+          names={t['id'] for t in manifest['tasks']}
+          assert len(names)==11
+          order=manifest['generation_order']
+          assert len(order)==11 and set(order)==names
+          seen=set()
+          for job_id in order:
+              task=next(t for t in manifest['tasks'] if t['id']==job_id)
+              assert task['output']==f"feipian/{job_id}.png"
+              assert re.fullmatch(r"Q(?:2[1-9]|3[01])_[A-Z0-9_]+",job_id)
+              assert task['source'].startswith(('母图/','@Q'))
+              if task['source'].startswith('@'):
+                  assert task['source'][1:] in seen
+              assert task['optimized_prompt'].startswith('<image1>')
+              seen.add(job_id)
+          assert manifest['source_archive_sha256']=='d818bad300bad79bfc1e059f810ca02e7bab41140ffd7fde63df8624914e9116'
+          assert 'GENERATED_AWAITING_VISUAL_QA' in runner
+          assert 'previous_record' in runner
+          print('PASS: 11 tasks, dependency order, ZIP lock, Python syntax, GitHub output verification')
+          PY
