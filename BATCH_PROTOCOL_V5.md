@@ -1,3 +1,29 @@
+## V5.1 补丁（2026-10-19）：修复 Unknown model architecture! 错误
+
+症状：Colab 已下载模型，执行任务时 `UnetLoaderGGUF` 报 `ValueError: This model is not currently supported - (Unknown model architecture!)`。
+
+原因：旧版 `city96/ComfyUI-GGUF` 不识别 Qwen-Image-2.1 的模型架构。已改为 `leejet/ComfyUI-GGUF`，并确保 ComfyUI 服务重启以加载新节点。**不需要更换或重新下载 GGUF/编码器/VAE 权重。**
+
+**如果当前 Colab 会话还在、模型文件还存在**：
+
+在旧的 Notebook 末尾新建一个代码单元，运行：
+
+```python
+!curl -fsSL https://raw.githubusercontent.com/mjw3177109/qwen2.1tu/main/tools/repair_qwen21_gguf_colab.py -o /content/repair_qwen21_gguf_colab.py && python /content/repair_qwen21_gguf_colab.py
+```
+
+看到 `SUCCESS: leejet/ComfyUI-GGUF` 后，再运行旧 Notebook 的最后一格“执行当前待办队列”，不要重新提交母图。
+
+**如果 Colab 运行时已断开**：
+
+重新打开 <https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_Batch_V5.ipynb>，设置 GPU 后运行全部。这份 Notebook 已是 V5.1，含最新 GGUF、GitHub Contents 写权限实际预检、可重试失败记录。会话重置后临时模型需要重新下载。
+
+成功结果：`images/<job_id>.png`、`jobs/results/<job_id>.json`（status=SUCCEEDED）；运行故障：`jobs/attempts/<job_id>.json`（status=RETRYABLE_FAILED，可重新执行）。如果提示 `HTTP 403`，说明 Colab Secrets 中的 GitHub Token 缺少仓库 Contents: Read and write 或已失效。
+
+**验证边界**：已更新 GitHub 代码并对独立修复脚本做 Python 语法检查；未能远程操作用户的 Colab T4 GPU，需观察实际重跑输出才能确认。
+
+---
+
 # Qwen2.1 图片编辑协议 V5｜单图与批量任务
 
 ## 对话下单：默认自动识别
