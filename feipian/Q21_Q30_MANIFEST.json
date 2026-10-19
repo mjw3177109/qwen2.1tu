@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "project": "废片之城",
+  "batch": "Q21-Q30",
+  "target_dir": "feipian",
+  "status": "PROMPTS_STAGED_NOT_RENDERED",
+  "important": "The prompts here do not imply Qwen generated any PNG. GPU and source ZIP still required.",
+  "generation_order": [
+    "Q30_PROP_PHONE_SINGLE",
+    "Q22_ROOF_TOP",
+    "Q25_ROOF_DAWN_MATCH",
+    "Q27_SCREEN_TOP",
+    "Q23_ROOF_BLOCK_RECORD",
+    "Q24_ROOF_PHONE_HAND",
+    "Q26_ROOF_FIFTH_XIAOQI",
+    "Q28_SCREEN_BLOCK",
+    "Q29_SCREEN_LINCHU_CLOSE",
+    "Q21_HALL_CONSOLE_HAND"
+  ],
+  "tasks": [
+    {
+      "id": "Q21_HALL_CONSOLE_HAND",
+      "shot": "Q21",
+      "output": "feipian/Q21_HALL_CONSOLE_HAND.png",
+      "source": "母图/generated/MASTER_SCN05_HALL_CLEAN_v2.png",
+      "references": [
+        "母图/props/PROP04_RENDER_CONSOLE.png",
+        "母图/characters/CHAR01_LINCHU.png"
+      ],
+      "optimized_prompt": "<image1> 在同一渲染大厅左前方唯一控制台，摄影机斜侧近距离拍林初的双手。其右手食指准确接触控制台操作面，左手自然靠近台缘；操作屏朝向林初，不得翻面。后方辨认出原有中央圆环和台阶。写实电影摄影，精确五指，只有一台控制台，无文字。",
+      "avoid": "多余手指，第二台控制台，屏幕朝观众，手和设备穿插。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14221,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q22_ROOF_TOP",
+      "shot": "Q22",
+      "output": "feipian/Q22_ROOF_TOP.png",
+      "source": "母图/scenes/SCN06_ROOFTOP.png",
+      "references": [
+        "母图/scenes/SCN07_ROOFTOP_DAYBREAK.png"
+      ],
+      "optimized_prompt": "<image1> 以同一冷灰色潮湿屋顶母图重建严格90度垂直正俯视无人物空间图。原屋顶左侧机械设备及梯子、朝城市一侧的安全栏杆、屋顶入口、可行走地面与危险边缘保持原有拓扑，东侧朝向同一远景。保留原场景灰蓝调和湿地反射，无遮挡显示走道，人物为空。",
+      "avoid": "斜鸟瞰，换屋顶，镜像屋顶，多余设备，人物，文字。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14240,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q23_ROOF_BLOCK_RECORD",
+      "shot": "Q23",
+      "output": "feipian/Q23_ROOF_BLOCK_RECORD.png",
+      "source": "@Q22_ROOF_TOP",
+      "references": [
+        "母图/characters/CHAR01_LINCHU.png",
+        "母图/generated/MASTER_CHAR02_XIAOQI_LOCK_v1.png",
+        "@Q30_PROP_PHONE_SINGLE"
+      ],
+      "optimized_prompt": "<image1> 在已确认严格俯视的同一屋顶空场中，只新增两个人物站位，不改变任何建筑拓扑。小七穿白色长裙、红色发卡、无耳坠，站在栏杆内侧安全地面，面朝东方天际；林初穿黑色连帽衫，在后方数步，双手举一部黑色三摄手机指向小七。两人不重叠，均在安全围栏内。不要数字标注和文字。",
+      "avoid": "人物悬空，栏杆外站立，第二部手机，多余人。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14259,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q24_ROOF_PHONE_HAND",
+      "shot": "Q24",
+      "output": "feipian/Q24_ROOF_PHONE_HAND.png",
+      "source": "母图/scenes/SCN06_ROOFTOP.png",
+      "references": [
+        "母图/characters/CHAR01_LINCHU.png",
+        "@Q30_PROP_PHONE_SINGLE",
+        "@Q23_ROOF_BLOCK_RECORD"
+      ],
+      "optimized_prompt": "<image1> 真实电影道具手部特写，林初穿深灰黑色连帽外套，以双手横向握住同一部黑色三摄手机准备录像：左手托住机身左端，右手稳握右端并轻触实体录制操作位置。手机背面朝向摄影机，屏幕朝林初；自然五指，双手归属正确，远处朦胧的小七白裙与同一屋顶栏杆构成背景，不出现可读UI或第二部手机。",
+      "avoid": "多手指，错左右手，手机翻面，第二手机，生成乱码UI。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14278,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q25_ROOF_DAWN_MATCH",
+      "shot": "Q25",
+      "output": "feipian/Q25_ROOF_DAWN_MATCH.png",
+      "source": "母图/scenes/SCN06_ROOFTOP.png",
+      "references": [
+        "母图/scenes/SCN07_ROOFTOP_DAYBREAK.png"
+      ],
+      "optimized_prompt": "<image1> 以上一张冷灰色屋顶原图为同机位画面，只允许原东方天际云层裂开清晨暖金色日出，晨光洒向原有金属栏杆、设备和湿地面，保持相机高度、前景设备、梯子、建筑轮廓、屋顶边缘与远景楼群空间一一对应，无人物。晨光方向参考SCN07_ROOFTOP_DAYBREAK。",
+      "avoid": "换屋顶，增减设备，改变机位，人物，夕阳式艳红晚霞。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14297,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q26_ROOF_FIFTH_XIAOQI",
+      "shot": "Q26",
+      "output": "feipian/Q26_ROOF_FIFTH_XIAOQI.png",
+      "source": "@Q25_ROOF_DAWN_MATCH",
+      "references": [
+        "母图/generated/MASTER_CHAR02_XIAOQI_LOCK_v1.png",
+        "@Q23_ROOF_BLOCK_RECORD"
+      ],
+      "optimized_prompt": "<image1> 小七仍站在同一屋顶栏杆内侧，靠近但绝不越过安全栏杆；中近景电影镜头，脸部必须与角色母图一致，长黑发上红发卡、冷白色层叠长裙，右耳没有耳坠。她回头后的动作自然衔接第五秒，视线望向刚出现的暖金清晨天际，安静又惊讶的表情，晨光落在脸侧。林初仍在镜头外举手机。",
+      "avoid": "换脸，耳坠，第二个小七，危险越栏杆，换衣服。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14316,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q27_SCREEN_TOP",
+      "shot": "Q27",
+      "output": "feipian/Q27_SCREEN_TOP.png",
+      "source": "母图/generated/MASTER_SCN08_SCREENING_CLEAN_v1.png",
+      "references": [],
+      "optimized_prompt": "<image1> 从同一已确定空放映室的平视母图重建严格90度正俯视清晰空间图。银幕位于前方，原有整齐座椅排数和列数不变，中央及侧边走道、最后一排靠走道的林初将坐的位置、唯一出入口拓扑对应。银幕朝向观众席，画面绝对无人，不生成座号。电影真实摄影环境。",
+      "avoid": "斜俯视，改变座位排数，增减走道，人物，文字。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14335,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q28_SCREEN_BLOCK",
+      "shot": "Q28",
+      "output": "feipian/Q28_SCREEN_BLOCK.png",
+      "source": "@Q27_SCREEN_TOP",
+      "references": [
+        "母图/characters/CHAR01_LINCHU.png",
+        "母图/generated/MASTER_CHAR_AUDIENCE_ROW_v1.png"
+      ],
+      "optimized_prompt": "<image1> 在确认完成的放映室正俯视空场图里增加恰好七名坐姿人物：唯一的林初穿黑色连帽衫，独坐最后一排靠中央走道的位置；AUD01到AUD06六位观众按照参考人物母图从左到右连续坐在前方同一排相邻六座，都面向银幕。人物和椅子不重叠，剩余座椅与走道保持原空间关系。不生成数字或文字。",
+      "avoid": "第八人，人物站立，重叠座位，林初座位变化，银幕朝向错误。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14354,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q29_SCREEN_LINCHU_CLOSE",
+      "shot": "Q29",
+      "output": "feipian/Q29_SCREEN_LINCHU_CLOSE.png",
+      "source": "母图/generated/MASTER_SCN08_SCREENING_CLEAN_v1.png",
+      "references": [
+        "母图/characters/CHAR01_LINCHU.png",
+        "@Q28_SCREEN_BLOCK"
+      ],
+      "optimized_prompt": "<image1> 在同一放映室最后一排，给林初一个斜后侧中近景，他穿同一套黑色连帽外套坐在靠走道的座位，身形、发型、面容一致，始终望向银幕，绝不回头看镜头。前方六名观众背影遵循固定六人顺序，银幕将熄时的冷光仍照到林初肩部，座椅排数与镜头逻辑连续。",
+      "avoid": "林初转身看镜头，额外观众，双重林初，椅子形变。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14373,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    },
+    {
+      "id": "Q30_PROP_PHONE_SINGLE",
+      "shot": "Q30",
+      "output": "feipian/Q30_PROP_PHONE_SINGLE.png",
+      "source": "母图/props/PROP05_PHONE_RECORDING_UI.png",
+      "references": [],
+      "optimized_prompt": "<image1> 以输入的唯一黑色三摄手机道具母版为严格参考，制作四格独立道具视图：A背面三摄模组、B金属机身侧边与实体按键、C使用者视角纯图形无字屏幕、D双手横握同一型号手机演示录像。四格为同一部手机同色同形，统一中性灰背景，边框与镜头排列精确一致，细微划痕保留，不出现任何可读文字或第二种机型。",
+      "avoid": "四格变成四款手机，摄像头位置镜像，乱码可读字，额外设备。",
+      "source_archive": "news.zip",
+      "status": "QUEUED_AWAITING_COLAB_SOURCE_AND_GPU",
+      "seed": 14392,
+      "dimension_strategy": "preserve_source_aspect_ratio",
+      "workflow": "Qwen-Image-2.1 single source + optional manual reference review",
+      "needs_quality_review": true
+    }
+  ]
+}
