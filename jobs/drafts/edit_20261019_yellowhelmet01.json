@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "edit_20261019_yellowhelmet01",
   "kind": "image_edit",
-  "status": "WAITING_FOR_SOURCE_UPLOAD",
+  "status": "QUEUED",
   "created_at": "2026-10-19",
   "original_source_name": "a80fecfff1e970bcc19a9c369192d84a(1).jpg",
   "expected_source_sha256": "7b5f6ea541bdd7230a77840b7e0af9ce19bd7ac03fdb5e97542ae35e77c01735",
@@ -10,5 +10,6 @@
   "prompt": "<image1> 严格执行局部图片编辑，仅修改指定区域：将画面右侧前景工人已经佩戴的白色工业安全帽的帽壳改为自然、明亮的工程安全黄色（接近 #F5C400）。保持原有安全帽完全相同的帽型、大小、位置、佩戴角度、帽檐、通风孔、表面材质、反光、高光、阴影、遮挡关系及黑色下颏系带。画面中后方的年长工人原本没有佩戴安全帽，不得为他添加任何帽子。除了安全帽帽壳颜色，其余画面保持与母图一致：两名工人的面部身份、表情、发型、肤色、工服、手部、姿态和相对位置不变；左侧白色机械臂、线缆、金属工装、笔记本电脑、按钮控制台、仪表屏幕、工厂环境及照明不变。严格保留原图景别、透视、长宽比、照片级写实风格，不允许重绘人物、增删物体、镜头移动、场景变更、卡通化或新加文字。目标是精准将白帽帽壳改为黄帽，而不是重新生成整张照片。",
   "resolution": 512,
   "seed": 42,
-  "notes": "母图目前仅存在于 ChatGPT 对话附件，尚未上传到 GitHub，不能直接执行。请在 Colab 中上传原始母图后创建 pending 任务。用户要求不调用 ChatGPT 生图。"
+  "notes": "原始 JPG 已经从聊天附件安全转存为 GitHub jobs/inputs/*.jpg.b64 并回读验证，已创建 pending JSON；尚未由 Colab GPU 生成成品。",
+  "pending_path": "jobs/pending/edit_20261019_yellowhelmet01.json"
 }
