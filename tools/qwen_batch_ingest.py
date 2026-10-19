@@ -126,6 +126,51 @@ def _get_optional(files, names):
     return _read_text(files[matched[0]], matched[0]) if matched else ''
 
 
+def _region_file(files: dict[str, bytes], selected: str, src: str):
+    """Explicit region geometry lives in ZIP regions/*.json, never inferred from text."""
+    if not selected:
+        return None, None
+    path=_norm(selected)
+    if path not in files or not path.lower().endswith('.json'):
+        raise BatchValidationError(f'母图 {src} 的选区 JSON 不存在: {path}')
+    try:
+        region=json.loads(_read_text(files[path],path))
+    except (json.JSONDecodeError,UnicodeDecodeError) as e:
+        raise BatchValidationError('选区 JSON 格式错误: '+path) from e
+    if not isinstance(region,dict):
+        raise BatchValidationError('选区必须是 JSON 对象: '+path)
+    return path,region
+
+def _check_scope(image_name: str, mode: str, region: dict | None,
+                 approved: bool, original_instruction: str) -> dict:
+    """Validate scope before any image uploads; GPU worker double-checks geometry."""
+    if not mode:
+        mode='local_recolor' if region and region.get('mode')=='recolor' else 'local_patch'
+    if mode=='full_redraw':
+        if region:
+            raise BatchValidationError(f'{image_name}: 整图重绘不得混入局部选区')
+        if approved is not True or len(original_instruction.strip())<8:
+            raise BatchValidationError(f'{image_name}: full_redraw 需要明确用户原话和 full_redraw_authorized=true')
+        return {'edit_mode':mode,'full_redraw_authorized':True,
+                'full_redraw_user_instruction':original_instruction.strip()}
+    if mode not in ('local_patch','local_recolor'):
+        raise BatchValidationError(f'{image_name}: edit_mode 不合法: {mode}')
+    if not region:
+        raise BatchValidationError(
+            f'{image_name}: NEEDS_REGION！V5.3 禁止默认整图重绘。'
+            '请先确认范围，再加入 regions/同名.json（原图像素polygon；local_patch还要crop_box）。')
+    if region.get('mode')!=('patch' if mode=='local_patch' else 'recolor'):
+        raise BatchValidationError(f'{image_name}: region.mode 和 edit_mode 不一致')
+    if not isinstance(region.get('polygon'),list) or len(region['polygon'])<3:
+        raise BatchValidationError(f'{image_name}: region 必须有 polygon')
+    if mode=='local_patch' and (not isinstance(region.get('crop_box'),list)
+                                or len(region['crop_box'])!=4):
+        raise BatchValidationError(f'{image_name}: local_patch 必须有 crop_box')
+    if mode=='local_recolor' and region.get('color_transform')!='white_to_safety_yellow':
+        raise BatchValidationError(f'{image_name}: local_recolor 目前仅支持 white_to_safety_yellow')
+    return {'edit_mode':mode,'edit_region':region}
+
+
 def prepare_batch(zip_path: str | Path) -> dict:
     """Return validated in-memory task records. No GitHub writes yet."""
     files = _strip_root(_index_zip(zip_path))
@@ -165,7 +210,12 @@ def prepare_batch(zip_path: str | Path) -> dict:
                 raw_id = None
             resolution = int((row.get('resolution') or DEFAULT_RESOLUTION))
             seed = int((row.get('seed') or DEFAULT_SEED))
-            rows.append((raw_id, source, prompt, resolution, seed))
+            region_file=(row.get('region_file') or '').strip()
+            edit_mode=(row.get('edit_mode') or '').strip()
+            approved=(row.get('full_redraw_authorized') or '').strip().lower()=='true'
+            instruction=(row.get('full_redraw_user_instruction') or '').strip()
+            rows.append((raw_id, source, prompt, resolution, seed,
+                         region_file, edit_mode, approved, instruction))
     else:
         prompt_map = {}
         for p in prompts:
@@ -175,6 +225,14 @@ def prepare_batch(zip_path: str | Path) -> dict:
             prompt_map[key] = p
         image_keys = {}
         used_prompts = set()
+        region_map={}
+        for path in files:
+            if path.startswith('regions/') and path.lower().endswith('.json'):
+                key=_clean_key(Path(path).stem)
+                if key in region_map:
+                    raise BatchValidationError('选区文件名二义性: '+path)
+                region_map[key]=path
+        used_regions=set()
         for src in images:
             key = _clean_key(Path(src).stem)
             if key in image_keys:
@@ -190,15 +248,22 @@ def prepare_batch(zip_path: str | Path) -> dict:
                 prompt = _read_text(files[text_file], text_file)
             else:
                 prompt = batch_prompt
-            rows.append((None, src, prompt, DEFAULT_RESOLUTION, DEFAULT_SEED))
+            region_file=region_map.get(key,'')
+            if region_file:
+                used_regions.add(region_file)
+            rows.append((None, src, prompt, DEFAULT_RESOLUTION, DEFAULT_SEED,
+                         region_file, '', False, ''))
         orphans = set(prompts) - used_prompts
         if orphans:
             raise BatchValidationError('发现未配对的提示词，拒绝猜测: ' + ', '.join(sorted(orphans)))
+        unused_regions=set(region_map.values())-used_regions
+        if unused_regions:
+            raise BatchValidationError('发现未配对的选区文件：'+','.join(sorted(unused_regions)))
 
     if len(rows) > MAX_JOBS:
         raise BatchValidationError('任务数量超过本批上限: ' + str(MAX_JOBS))
     results, used = [], set()
-    for raw_id, src, prompt, resolution, seed in rows:
+    for raw_id, src, prompt, resolution, seed, region_file, edit_mode, approved, instruction in rows:
         if not 3 <= len(prompt) <= 2200:
             raise BatchValidationError('编辑要求为空/过长: ' + src)
         if resolution not in (512, 640, 768):
@@ -225,12 +290,15 @@ def prepare_batch(zip_path: str | Path) -> dict:
                          '身体比例、设备布局、场景光照、镜头视角及摄影/绘画风格，不擅自添加物体。')
         if len(final_prompt) > 2500:
             raise BatchValidationError('组合提示词过长: ' + job_id)
+        _,region=_region_file(files,region_file,src)
+        scope=_check_scope(src,edit_mode,region,approved,instruction)
         results.append({
             'id': job_id, 'source': src,
             'input_b64_path': f'jobs/inputs/{job_id}.{ext}.b64',
             'input_sha256': hashlib.sha256(raw).hexdigest(),
             'raw_b64': base64.b64encode(raw).decode('ascii'),
             'prompt': final_prompt, 'resolution': resolution, 'seed': seed,
+            **scope,
         })
     return {'jobs': results, 'source_zip': Path(zip_path).name,
             'count': len(results), 'global_rules': bool(global_rules)}
@@ -288,7 +356,13 @@ def submit_batch(prepared: dict, repo: str, token: str, branch: str = 'main',
             'input_sha256': job['input_sha256'],
             'prompt': job['prompt'], 'resolution': job['resolution'], 'seed': job['seed'],
             'created_at': 'queued_by_colab',
+            'edit_mode':job['edit_mode'],
         }
+        if job['edit_mode']=='full_redraw':
+            rec['full_redraw_authorized']=True
+            rec['full_redraw_user_instruction']=job['full_redraw_user_instruction']
+        else:
+            rec['edit_region']=job['edit_region']
         src_path = job['input_b64_path']
         pending_path = f'jobs/pending/{jid}.json'
         if dry_run:
@@ -306,5 +380,5 @@ def submit_batch(prepared: dict, repo: str, token: str, branch: str = 'main',
 def preview_as_text(prepared: dict) -> str:
     lines = [f'检测到 {prepared["count"]} 张待编辑图片（未生成图像）']
     for item in prepared['jobs']:
-        lines.append(f'  {item["id"]}: {item["source"]} -> images/{item["id"]}.png')
+        lines.append(f'  {item["id"]}: {item["source"]} [{item["edit_mode"]}] -> images/{item["id"]}.png')
     return '\n'.join(lines)
