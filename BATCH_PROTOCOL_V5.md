@@ -1,3 +1,112 @@
+# Qwen-Image-2.1 编辑协议 V5.3：原图优先、范围确认、严格禁止默认整图重绘
+
+**V5.3 从 2026-10-19 起执行。** GitHub 接单 → 确认母图、人物/场景保真需求和编辑范围 → 提交单图或 ZIP → Colab 执行 → 原图保真合成 → GitHub 结果。旧版已经 SUCCEEDED 的图和记录不会覆盖。
+
+## 核心规则（真实代码硬性拦截，不靠提示词承诺）
+
+1. **局部 Qwen 修改**：任务须使用 \`edit_mode=local_patch\` + \`edit_region\` 原图像素坐标（\`crop_box\`、\`polygon\`）；仅把裁剪框传给 Qwen。Qwen 只生成裁剪框，最终仅将 polygon 内的像素合成到 **原始分辨率** 母图上，未选中像素保持完全一致。
+2. **纯白帽改黄帽**：\`edit_mode=local_recolor\` + \`edit_region.mode=recolor\` + \`color_transform=white_to_safety_yellow\`，CPU 遮罩改色，不调用 Qwen，也不缩小原始母图。其它颜色变换暂不开放自动执行，避免错改。
+3. **没有范围**：禁止模型运行；Colab 会写入 \`jobs/review/<任务ID>.json\`（\`status=NEEDS_REGION\`），提示补齐母图上的坐标。相同未修改任务不会每次重复尝试。
+4. **用户明确要求全图风格改变**：必须同时提交 \`edit_mode=full_redraw\`、\`full_redraw_authorized=true\`、\`full_redraw_user_instruction\`（用户真实原话，至少8字符）。没有三者，不能执行整图重绘。只有这个模式允许整图缩小推理。
+5. **冲突及边界**：多边形、裁剪区域无效或超出原图、局部选区覆盖原图85%以上，统一阻止。不能把旧流程上传却未验收的图片误认作新的保真成品。
+6. **任务执行和完成**：结果分别写入 \`images/<job_id>.png\`、\`jobs/results/<job_id>.json\`，失败尝试写入 \`jobs/attempts/<job_id>.json\`，缺范围写入 \`jobs/review/<job_id>.json\`。GPU 代码仍需用户启动 Colab，不能在聊天中自动唤醒免费 T4。
+
+## 一、单张图任务格式
+
+**局部 Qwen 编辑（改变物体、动作等）：**
+
+\`\`\`json
+{
+  "schema_version":1,
+  "id":"edit_SH001_local_001",
+  "kind":"image_edit",
+  "input_b64_path":"jobs/inputs/edit_SH001_local_001.jpg.b64",
+  "input_sha256":"<原始图片真实 SHA256>",
+  "prompt":"<image1> 只修改画面中指定的安全帽区域，人物脸部和其他画面不动。",
+  "resolution":512,
+  "seed":42,
+  "edit_mode":"local_patch",
+  "edit_region":{
+    "mode":"patch",
+    "crop_box":[550,0,1040,310],
+    "polygon":[[661,158],[674,122],[674,88],[685,64],[739,26],[963,20],[936,47],[904,58],[863,72],[821,91],[778,113],[728,144],[682,162]],
+    "feather":2
+  }
+}
+\`\`\`
+
+**纯局部安全帽改色（当前支持，零人脸重绘）：**
+
+\`\`\`json
+{
+  "edit_mode":"local_recolor",
+  "edit_region":{
+    "mode":"recolor",
+    "color_transform":"white_to_safety_yellow",
+    "polygon":[[661,158],[674,122],[674,88],[685,64],[739,26],[963,20],[936,47],[904,58],[863,72],[821,91],[778,113],[728,144],[682,162]],
+    "feather":1.5
+  }
+}
+\`\`\`
+
+以上多边形是**那一张工厂图片**的示范定位，不能套用其他母图。不要把上述示例中带尖括号的 SHA256 当作真实数据上传。
+
+**整图重绘（只有用户明确要求才允许）：**
+
+\`\`\`json
+{
+  "edit_mode":"full_redraw",
+  "full_redraw_authorized":true,
+  "full_redraw_user_instruction":"把整张照片重新绘制成油画风格，允许背景和人物细节发生变化"
+}
+\`\`\`
+
+必须同时保留该任务原本的母图、提示词、seed、resolution 和有效任务 ID。
+
+## 二、批量 ZIP 格式
+
+\`\`\`text
+Qwen_Batch/
+  sources/
+    SH001.jpg
+    SH002.png
+  prompts/
+    SH001.txt
+    SH002.txt
+  regions/
+    SH001.json
+    SH002.json
+  global_rules.txt
+  batch.csv                  # 可选；一图多改或显式整图授权时必用
+\`\`\`
+
+不提供 CSV 时，\`sources/SH001.jpg\`、\`prompts/SH001.txt\`、\`regions/SH001.json\` 自动匹配。带 CSV 时可填写：
+
+\`\`\`csv
+source,prompt_file,edit_mode,region_file,resolution,seed
+sources/SH001.jpg,prompts/SH001.txt,local_patch,regions/SH001.json,512,42
+sources/SH002.png,prompts/SH002.txt,local_recolor,regions/SH002.json,512,42
+\`\`\`
+
+整图重绘 CSV 另加两列 \`full_redraw_authorized\` 和 \`full_redraw_user_instruction\`，且必须填写用户的真实授权原话。ZIP 内的局部任务缺少 region 文件时会**整批拒绝入队，不会先上传一半**，并告知哪个源图缺少选区。多张图无法准确配对时先发给 ChatGPT 做逐张核对，而不是让程序猜。
+
+## 三、效果和成本界限
+
+- **保留原图**不等于 AI 超分。V5.3 不会凭空生成原图不存在的纹理；可在后续明确提出单独的 1080P/4K 超分任务。
+- **遮罩外完全保持原图**可以从像素验证；但遮罩内的人脸/文字若被选中，仍然可能发生变化，所以尽量不要把脸放入 polygon。
+- **局部 Qwen 模式仍可能需要在小裁剪框内缩放**以满足 T4 资源限制；它不再默认缩小和重新生成整张照片。
+- 仓库公开，因此上传其中的母图、成品和提示词均可能公开访问。敏感照片不要上传到公开仓库。
+
+## 四、真实验收状态
+
+- 原任务 \`edit_20261019_yellowhelmet01\` 的 V5.2 Qwen GPU 输出与 CPU 高清后处理均已成功，旧文件保留。
+- V5.3 改动已经在代码层面接入，包含单元测试、Notebook Python 语法检查、像素保护测试和 GitHub Actions 自动 CI。
+- **V5.3 尚未在新的真实 Qwen T4 局部编辑任务上完成 GPU 验收**；首次运行需观察日志，不能把 CI 测试当作真实 GPU 生成成功。
+
+[打开 Colab V5.3](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_Batch_V5.ipynb)
+
+---
+
 ## V5.2 人脸锁定与高清局部编辑（2026-10-19）
 
 ### 首张实际修复结果
