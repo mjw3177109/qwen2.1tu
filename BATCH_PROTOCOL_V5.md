@@ -1,3 +1,37 @@
+## V5.2 人脸锁定与高清局部编辑（2026-10-19）
+
+### 首张实际修复结果
+
+- [原 Qwen2.1 输出：672×384](https://github.com/mjw3177109/qwen2.1tu/blob/main/images/edit_20261019_yellowhelmet01.png) — 成功完成 GPU 工作流，但整张照片被低分辨率重绘；不作为正式交付质量。
+- [高清保真输出：1388×808](https://github.com/mjw3177109/qwen2.1tu/blob/main/images/edit_20261019_yellowhelmet01_HQ.png) — GitHub Actions CPU 后处理，基于 **原始 JPG** 的局部安全帽改色，不重新生成任何人脸，外部像素全部保持原样。注意这是后处理，不是第二次 GPU 推理。
+- [GitHub Actions 已成功完成](https://github.com/mjw3177109/qwen2.1tu/actions/runs/39216742802)，[质量验收 JSON](https://github.com/mjw3177109/qwen2.1tu/blob/main/jobs/results/edit_20261019_yellowhelmet01_HQ.json)。
+- [质量脚本](https://github.com/mjw3177109/qwen2.1tu/blob/main/tools/qwen_preserve_original.py) 支持 `recolor`（CPU 原图局部颜色变更）与 `patch`（Qwen 裁剪编辑图按遮罩贴回原图）。
+
+### 今后图像局部编辑的推荐模式
+
+- **纯颜色、材质色相变化**：优先 `recolor`。用原图 + 精确多边形选区做像素级色彩修改，无需运行 GPU；人脸、设备、构图严格 0 变化。
+- **局部替换物体、局部增删物体**：Qwen 使用 `edit_region` 裁剪后的图片生成，仅把 `polygon` 遮罩内部合成到原始分辨率，保留其他部分的原始像素。
+- **用户明确要求整体风格变换或改变画面全局结构**：可以仍走整图模式，但不能保证人物脸完全不变。
+
+待办 JSON 中新增可选 `edit_region`：
+
+```json
+{
+  "edit_region": {
+    "mode": "patch",
+    "crop_box": [550, 0, 1040, 310],
+    "polygon": [[661, 158], [674, 122], [674, 88], [685, 64], [705, 45], [739, 26], [765, 20], [963, 20], [961, 37], [936, 47], [904, 58], [863, 72], [821, 91], [778, 113], [728, 144], [682, 162]],
+    "feather": 2.0
+  }
+}
+```
+
+坐标为母图**原始尺寸**的绝对像素坐标。模型只接收 `crop_box` 裁剪区域；Qwen 输出会缩放为该裁剪框大小，并且仅替换 `polygon` 内的像素。上例只是这张工厂母图的定位数据，不能拿去直接套到别的图片。
+
+**真实高清度边界**：保留原图的实际 1388×808 像素；不会凭空产生原图没有的高清细节。若需要进一步超分辨率，可另启独立的超分流程，并逐张核验人脸一致性。
+
+---
+
 ## V5.1 补丁（2026-10-19）：修复 Unknown model architecture! 错误
 
 症状：Colab 已下载模型，执行任务时 `UnetLoaderGGUF` 报 `ValueError: This model is not currently supported - (Unknown model architecture!)`。
