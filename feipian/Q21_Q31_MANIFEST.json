@@ -208,5 +208,8 @@
       "workflow": "Qwen-Image-2.1 single-source full view-sheet reconfiguration",
       "needs_quality_review": true
     }
-  ]
+  ],
+  "source_archive_sha256": "d818bad300bad79bfc1e059f810ca02e7bab41140ffd7fde63df8624914e9116",
+  "source_archive_size": 69967390,
+  "first_step": "Run GPU notebook, upload the original news.zip, do not upload generated montages."
 }
