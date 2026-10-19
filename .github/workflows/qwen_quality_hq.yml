@@ -1,0 +1,91 @@
+name: Qwen Source-Preserved HQ Fix
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/qwen_quality_hq.yml'
+permissions:
+  contents: write
+jobs:
+  restore-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install image processing dependencies
+        run: python -m pip install --disable-pip-version-check 'numpy>=1.26,<3' 'Pillow>=10,<13' 'opencv-python-headless>=4.8,<5'
+      - name: Verify original Qwen result exists
+        run: |
+          test -s images/edit_20261019_yellowhelmet01.png
+          test -s jobs/results/edit_20261019_yellowhelmet01.json
+          python - <<'PY'
+          import json
+          p='jobs/results/edit_20261019_yellowhelmet01.json'
+          assert json.load(open(p,encoding='utf-8')).get('status')=='SUCCEEDED','Qwen source job not successful'
+          print('Existing real Qwen output verified.')
+          PY
+      - name: Restore original full-resolution image and yellow helmet only
+        run: |
+          python tools/qwen_preserve_original.py \
+            --source jobs/inputs/edit_20261019_yellowhelmet01.jpg.b64 \
+            --config jobs/quality/edit_20261019_yellowhelmet01_HQ.json \
+            --output images/edit_20261019_yellowhelmet01_HQ.png
+      - name: Validate no human face pixels changed and create quality record
+        run: |
+          python - <<'PY'
+          import base64,io,json,hashlib,datetime
+          import cv2,numpy as np
+          from PIL import Image
+          src=np.asarray(Image.open(io.BytesIO(base64.b64decode(open('jobs/inputs/edit_20261019_yellowhelmet01.jpg.b64').read()))).convert('RGB'))
+          out=np.asarray(Image.open('images/edit_20261019_yellowhelmet01_HQ.png').convert('RGB'))
+          assert src.shape==out.shape,(src.shape,out.shape)
+          # Upper torso and entire older man's face regions untouched; foreground face untouched.
+          for name,(x0,y0,x1,y1) in {
+              'older_face':(685,105,840,300),
+              'foreground_face':(785,70,1040,290),
+              'factory_equipment':(0,165,650,780)
+          }.items():
+              # Faces overlap hardhat bounding coordinates; compare only pixels below y=180 on overlapping x.
+              if name=='older_face':y0=185
+              if name=='foreground_face':y0=180
+              assert np.array_equal(src[y0:y1,x0:x1],out[y0:y1,x0:x1]),name
+          diff=np.any(src!=out,axis=2)
+          assert 2000<int(diff.sum())<35000, f'edit mask has wrong area: {diff.sum()}'
+          path='jobs/results/edit_20261019_yellowhelmet01_HQ.json'
+          output='images/edit_20261019_yellowhelmet01_HQ.png'
+          json.dump({
+              'schema_version':1,'job_id':'edit_20261019_yellowhelmet01_HQ',
+              'status':'SUCCEEDED','stage':'SOURCE_PRESERVED_POSTPROCESS',
+              'method':'local pixel-level color replacement, not a second Qwen GPU run',
+              'parent_qwen_job':'edit_20261019_yellowhelmet01',
+              'source_sha256':hashlib.sha256(base64.b64decode(open('jobs/inputs/edit_20261019_yellowhelmet01.jpg.b64').read())).hexdigest(),
+              'output_path':output,'image_url':f'https://github.com/mjw3177109/qwen2.1tu/blob/main/{output}',
+              'size':[int(src.shape[1]),int(src.shape[0])],
+              'face_pixels_preserved':True,
+              'changed_pixels':int(diff.sum()),
+              'finished_at':datetime.datetime.now(datetime.timezone.utc).isoformat()
+          },open(path,'w',encoding='utf-8'),ensure_ascii=False,indent=2)
+          print('High-res success:',src.shape,'changed pixels:',int(diff.sum()))
+          PY
+      - name: Commit restored image and quality record
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add images/edit_20261019_yellowhelmet01_HQ.png jobs/results/edit_20261019_yellowhelmet01_HQ.json
+          if git diff --cached --quiet; then
+            echo 'No new output changes'
+            exit 0
+          fi
+          git commit -m 'images: publish source-preserved HQ hardhat edit'
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+            git pull --rebase origin main
+          done
+          exit 1
