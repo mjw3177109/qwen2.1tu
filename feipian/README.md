@@ -1,3 +1,26 @@
+# 《废片之城》Q21–Q31（包含最后一张 Q31）
+
+✅ **11 个任务的提示词及母图配对已提交，GitHub Actions 静态检查通过。**
+
+⚠️ **真实 Qwen GPU 推理尚未执行，当前 feipian 目录仍没有 Q21–Q31 的成品 PNG。** 不要把静态检查成功当作出图成功。
+
+**最新一键入口**：[Colab Q21–Q31 完整批次](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/feipian/Colab_Q21_Q31.ipynb)
+
+1. 打开 Notebook，在 Colab 中选择 T4 GPU，确认左侧 Secrets 已设置可写 GitHub Token。
+2. 点击运行全部。当最后一个单元弹出上传窗口，上传此前给出的 **原始 news.zip**（文件 SHA256 已锁定，防止错传）。
+3. 程序按依赖顺序执行共 11 个镜头，逐张将候选图保存在 **feipian/Qxx_*.png**，将执行记录放在 **feipian/results/**。中途 Colab 免费额度断开时，下次可继续未完成镜头。
+4. 每张图标记为 **GENERATED_AWAITING_VISUAL_QA**，待检验身份一致性、机位和道具构造。Q25 选择已有的晨光屋顶母图，不谎称新推理。
+
+- [Q21–Q31 提示词及依赖清单](./Q21_Q31_MANIFEST.json)
+- [专用批次执行脚本](./run_Q21_Q31_colab.py)
+- [CI 静态检查](https://github.com/mjw3177109/qwen2.1tu/actions/workflows/feipian_q21_q31_ci.yml)
+
+## 历史 Q21–Q30 入口
+
+如你只想单独执行前十个镜头，可继续使用 [Q21–Q30 Notebook](./Colab_Q21_Q30.ipynb)、[旧版清单](./Q21_Q30_MANIFEST.json) 和 [旧版运行脚本](./run_Q21_Q30_colab.py)。两个批次共用输出路径，默认不会覆盖已有图。
+
+---
+
 # 《废片之城》Q21–Q30 第三批
 
 此文件夹用于保存第三批真实 Qwen-Image-2.1 输出以及对应的任务、提示词与结果记录。**目前十张 PNG 尚未执行 GPU 生成；不要把提示词入库当作出图完成。**
