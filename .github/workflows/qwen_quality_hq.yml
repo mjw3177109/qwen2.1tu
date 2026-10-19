@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/qwen_quality_hq.yml'
+      - 'jobs/quality/edit_20261019_yellowhelmet01_HQ.json'
 permissions:
   contents: write
 jobs:
