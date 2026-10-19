@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "job_id": "edit_20261019_yellowhelmet01",
+  "status": "SUCCEEDED",
+  "input_path": "jobs/inputs/edit_20261019_yellowhelmet01.jpg.b64",
+  "image_url": "https://github.com/mjw3177109/qwen2.1tu/blob/main/images/edit_20261019_yellowhelmet01.png",
+  "finished_at": "2026-10-19T07:16:18.807726Z",
+  "seed": 42,
+  "resolution": 512
+}
