@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "job_id": "edit_20261019_yellowhelmet01_HQ",
+  "status": "SUCCEEDED",
+  "stage": "SOURCE_PRESERVED_POSTPROCESS",
+  "method": "local pixel-level color replacement, not a second Qwen GPU run",
+  "parent_qwen_job": "edit_20261019_yellowhelmet01",
+  "source_sha256": "7b5f6ea541bdd7230a77840b7e0af9ce19bd7ac03fdb5e97542ae35e77c01735",
+  "output_path": "images/edit_20261019_yellowhelmet01_HQ.png",
+  "image_url": "https://github.com/mjw3177109/qwen2.1tu/blob/main/images/edit_20261019_yellowhelmet01_HQ.png",
+  "size": [
+    1388,
+    808
+  ],
+  "face_pixels_preserved": true,
+  "changed_pixels": 14208,
+  "finished_at": "2026-10-19T07:33:37.259644+00:00"
+}
