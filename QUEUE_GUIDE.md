@@ -6,6 +6,14 @@
 
 **注意：Google Colab 免费运行时不能充当长期无人值守的远程 GPU Worker。** Google 官方 FAQ 明确列出免费版限制运行分布式计算 Worker（https://research.google.com/colaboratory/faq.html）。本版本提供**交互式一键执行待办任务**：在 Colab 中点击执行任务格，处理当时已有的任务，并上传结果；不后台轮询空队列、不自动远程启动 Colab。需要真正不经手动启动的全自动，使用自有 RTX 4090、合规的付费/自托管 GPU 服务。
 
+## 最新任务（黄色安全帽）
+
+- 已提交优化后的编辑提示词：[edit_20261019_yellowhelmet01.json](https://github.com/mjw3177109/qwen2.1tu/blob/main/jobs/drafts/edit_20261019_yellowhelmet01.json)
+- 当前状态：`WAITING_FOR_SOURCE_UPLOAD`（原始母图仍在 ChatGPT 对话里，没有自动传到 GitHub，因此**尚未进入 GPU 待办队列**）。
+- 打开下方 V4 Notebook，运行初始化及工作流单元后，在 **06 母图上传与任务入队** 单元上传原始 JPG（**不是** ChatGPT 生图），程序核对 SHA256 后会自动创建 `jobs/inputs/` 和 `jobs/pending/`，再运行下一单元生成并发布图片。
+- 最终图片应写入 `images/edit_20261019_yellowhelmet01.png`；实际生成成功前该地址不会存在。
+- 本流程需要 Colab 真实 GPU 成功执行，无法在聊天中直接远程启动免费 Colab；当前还没有生成结果。
+
 ## 运行入口
 
 [打开 Colab V4 队列 Notebook](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_Queue_V4.ipynb)
@@ -26,7 +34,7 @@
 数量：1（可选，当前每个任务一张）
 ```
 
-我将把输入图片压缩至适合 Github Contents API 的体积（上传源码仍可能公开），创建以下文件：
+系统会保存提示词草稿；ChatGPT 对话内上传的母图无法直接被 GitHub/Colab 读取，所以在 Colab 的上传单元补充原始母图之后，才会形成正式的 GPU 待办文件：
 
 ```
 jobs/
@@ -37,7 +45,7 @@ images/<JOB_ID>.png         # 成品图
 queue/events.json           # 最近的任务完成/失败通知事件
 ```
 
-pending 文件示例：
+pending 文件示例（母图上传完成后才创建）：
 
 ```json
 {
