@@ -1,30 +1,35 @@
-# Qwen-Image-2.1 编辑图片 · Google Colab 免费 GPU
+# Qwen-Image-2.1 图片编辑与 GitHub 自动归档
 
-使用 Google Colab（免费 GPU 资源视可用性而定）执行 Qwen-Image-2.1-Turbo 单图编辑，生成的 PNG 自动上传到本仓库的 `images/` 文件夹。
+## 推荐入口：V4 任务队列
 
-## 运行
+[打开 Colab V4 任务队列 Notebook](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_Queue_V4.ipynb)
 
-[在 Google Colab 打开 Notebook](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_GitHub_AutoPush.ipynb)
+操作说明与真实限制：[QUEUE_GUIDE.md](./QUEUE_GUIDE.md)。
 
-1. 在 GitHub 创建 **Fine-grained personal access token**，仅授权本仓库 `mjw3177109/qwen2.1tu` 的 **Contents: Read and write**。不需要提供给 ChatGPT。
-2. 在 Colab 左侧「🔑 Secrets」创建名称 `GITHUB_TOKEN`，将 Token 放入值，并打开允许 Notebook 访问的开关。
-3. Colab「运行时 → 更改运行时类型 → GPU」，然后从上往下执行所有单元格。
-4. 上传 PNG/JPG/WEBP 原图，修改提示词，运行编辑；生成的图片自动发布到仓库 `images/` 下。
+**期望工作流**：你在 ChatGPT 上传母图并给出中文修改提示词 → ChatGPT 创建 `jobs/pending/<任务ID>.json` 和对应母图数据 → 交互式打开 Colab 后点击运行 → Colab 自动读取队列、编辑图片、把 PNG 上传到 `images/` 并写 `jobs/results/` → 配置的 ChatGPT 定时检查任务发现新结果后通知你。
 
-## 重要说明
+> ⚠️ 免费 Colab 不能被 ChatGPT 远程启动为长期后台 Worker，Google 官方明确限制免费 Colab 运行分布式计算 Worker。Notebook 只执行当前队列，不会后台无限轮询。要实现发送后完全无人干预，需要自有常开 GPU（例如 RTX 4090）或合规的付费 GPU 服务。
+>
+> ⚠️ 仓库是 **public**：包括母图的 base64 文本、编辑成品与任务提示词全部公开。不要用于私密素材。
+>
+> ⚠️ Qwen-Image-2.1 量化推理尚未通过免费 Colab T4 实机端到端验证。GPU/内存不足或扩展节点兼容问题都可能导致失败，结果文件会记录失败原因。
 
-- **当前无法从 ChatGPT 远程启动或保持你的 Colab 运行时**。Notebook 必须在你自己登录的 Colab 页面运行。
-- 使用量化 GGUF Q4 主模型 + W4A8 文本编码器 + VAE；下载总量约 11 GB（不包含运行时依赖）。
-- 这是低显存方案，**尚未经 Colab 免费 T4 实机验收**。T4 系统内存、显存、GPU 配额及量化编码器兼容性可能导致失败。
-- 不包含 LoRA，也不上传大模型、Token 或原始图片到 GitHub；只提交生成结果。
-- **仓库目前是公开的**，自动上传的图片也会公开。不要上传任何不愿公开的内容。
-- 上传 GitHub 有文件大小限制，单张 PNG 需低于 100 MiB，且建议小于 20 MiB。
-- 模型受到原作者许可证约束；商用前核实 Qwen Research License。
+### GitHub 目录
 
-## 目录
-
+```text
+Colab_Qwen21_Edit_Queue_V4.ipynb
+Colab_Qwen21_Edit_GitHub_AutoPush.ipynb  # 原 V3，保留
+QUEUE_GUIDE.md
+jobs/
+  inputs/
+  pending/
+  results/
+queue/events.json
+images/  # 第一张成品成功上传后创建
 ```
-Colab_Qwen21_Edit_GitHub_AutoPush.ipynb
-README.md
-images/      # 首次成功生成并上传后自动出现
-```
+
+### 原始单图手动编辑版
+
+[打开原版 Colab Notebook](https://colab.research.google.com/github/mjw3177109/qwen2.1tu/blob/main/Colab_Qwen21_Edit_GitHub_AutoPush.ipynb)
+
+保留原版以兼容你的既有设置，不覆盖原有功能。两版均使用 Colab Secrets `GITHUB_TOKEN`。
